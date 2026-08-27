@@ -9,7 +9,14 @@ st.set_page_config(
     page_title="RoW Inspection Report",
     layout="wide",
 )
-
+st.markdown("""
+<style>
+/* Hide Deploy button */
+[data-testid="stAppDeployButton"] {
+    display: none;
+}
+</style>
+""", unsafe_allow_html=True)
 st.title("Row Inspection Report")
 
 # Read the data from the database
