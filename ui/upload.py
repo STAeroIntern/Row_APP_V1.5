@@ -19,6 +19,9 @@ with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
 
 
+
+
+
 # ==================================================
 # UPLOAD DIALOG
 # ==================================================
@@ -74,14 +77,19 @@ def new_report_dialog():
             key=f"uav_{fk}",
         )
 
-        safe_clearance = st.number_input(
-            "Safe Clearance Distance (m)",
-            min_value=0,
-            max_value=200,
-            step=1,
-            value=None,
-            key=f"sc_{fk}",
-        )
+
+        safe_clearance = st.number_input("Safe Clearance Distance (m)",value=None,key=f"sc_{fk}",)
+
+        st.markdown("""
+        <style>
+        /* Hide +/- buttons on number inputs */
+        button.step-up,
+        button.step-down {
+            display: none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+                
 
     with col2:
 

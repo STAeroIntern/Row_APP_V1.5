@@ -71,7 +71,8 @@ def get_report_by_id(report_id):
             r.safe_clearance_distance,
             r.status,
             rf.report_path,
-            rf.video_path
+            rf.video_path,
+            rf.debug_video_path
         FROM row_database.reports AS r
         LEFT JOIN row_database.report_files AS rf
             ON r.id = rf.report_id

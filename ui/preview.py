@@ -110,8 +110,8 @@ def preview_dialog(report_id):
 
     st.caption(report["filename"])
 
-    tab_report, tab_video = st.tabs(
-        ["📄 Report", "🎬 Processed Video"]
+    tab_report, tab_video, tab_video_debug = st.tabs(
+        ["📄 Report", "🎬 Processed Video", "🎬 Debug Video"]
     )
 
     with tab_report:
@@ -167,3 +167,26 @@ def preview_dialog(report_id):
 
         else:
             st.warning("Processed video file not found.")
+
+
+    with tab_video_debug:
+    
+            video_path = report["video_path"]
+    
+            if os.path.exists(video_path):
+    
+                with open(video_path, "rb") as f:
+                    video_bytes = f.read()
+    
+                video_player(video_bytes)
+    
+                st.download_button(
+                    "⬇ Download video",
+                    data=video_bytes,
+                    file_name=report["filename"] + ".mp4",
+                    mime="video/mp4",
+                    key=f"dl_video_{report_id}",
+                )
+    
+            else:
+                st.warning("Processed video file not found.")
