@@ -18,7 +18,13 @@ from services.report_service import (
 with open("config.yml", "r") as f:
     config = yaml.safe_load(f)
 
-
+st.markdown("""
+<style>
+[data-testid="stNumberInput"] button {
+    display: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 
@@ -76,16 +82,6 @@ def new_report_dialog():
             "UAV ID",
             key=f"uav_{fk}",
         )
-
-
-        st.markdown("""
-        <style>
-        /* Hide +/- buttons in st.number_input */
-        div[data-testid="stNumberInput"] button {
-            display: none !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
 
         safe_clearance = st.number_input(
             "Safe Clearance Distance (m)",
