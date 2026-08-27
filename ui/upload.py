@@ -87,6 +87,7 @@ def new_report_dialog():
             "Safe Clearance Distance (m)",
             min_value = 0,
             max_value = 200,
+            placeholder = 0,
             value=None,
             key=f"sc_{fk}",
         )
