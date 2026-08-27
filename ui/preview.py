@@ -171,7 +171,7 @@ def preview_dialog(report_id):
 
     with tab_video_debug:
     
-            video_path = report["video_path"]
+            video_path = report["debug_path"]
     
             if os.path.exists(video_path):
     
