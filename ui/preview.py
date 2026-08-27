@@ -185,7 +185,7 @@ def preview_dialog(report_id):
                     data=video_bytes,
                     file_name=report["filename"] + ".mp4",
                     mime="video/mp4",
-                    key=f"dl_video_{report_id}",
+                    key=f"dl__bug_video_{report_id}",
                 )
     
             else:
