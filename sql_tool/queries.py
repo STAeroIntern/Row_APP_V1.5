@@ -219,3 +219,22 @@ def has_processing_report():
     conn.close()
 
     return bool(result)
+
+def has_duplicate_report(filename):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM row_database.reports
+            WHERE filename = %s
+        )
+    """, (filename,))
+
+    result = cursor.fetchone()[0]
+
+    cursor.close()
+    conn.close()
+
+    return bool(result)

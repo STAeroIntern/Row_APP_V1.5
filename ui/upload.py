@@ -8,6 +8,7 @@ import yaml
 from sql_tool.queries import (
     has_processing_report,
     create_report,
+    has_duplicate_report
 )
 from services.report_service import (
     add_files_to_input,
@@ -180,6 +181,7 @@ def new_report_dialog():
             )
             return
 
+
         # --------------------------------------------------
         # Determine status
         # --------------------------------------------------
@@ -204,6 +206,15 @@ def new_report_dialog():
             inspection_dt_utc,
             safe_clearance,
         )
+
+        ##Condition check
+        duplicate_status = has_duplicate_report(filename)
+        if duplicate_status == True:
+            st.error(
+                "Report already exists."
+            )
+            return
+
 
         # --------------------------------------------------
         # Add files to input
