@@ -6,6 +6,7 @@ from ui.ui_tools import (
     display_table,
     render_filter,
     filter_reports,
+    render_solar_filter
 )
 
 
@@ -55,4 +56,4 @@ else:
     clearance_selection,
     sorting_selection,
     order_selection,
-) = render_filter(uav_ids)
+) = render_solar_filter(uav_ids)
