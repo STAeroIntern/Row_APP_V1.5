@@ -34,34 +34,35 @@ with open("config.yml", "r") as f:
 @st.dialog("New Inspection Report", width="large")
 def new_report_dialog():
 
-    # --------------------------------------------------
-    # Inspection type selection
-    # --------------------------------------------------
-
     if "inspection_type" not in st.session_state:
         st.session_state.inspection_type = None
 
-    # Only show the inspection type selection
-    # when nothing has been selected yet.
+    # Selection screen
     if st.session_state.inspection_type is None:
 
         col1, col2 = st.columns(2)
 
         with col1:
-            if st.button(
+            st.button(
                 "Row Inspection",
                 use_container_width=True,
-            ):
-                st.session_state.inspection_type = "row"
+                on_click=lambda: setattr(
+                    st.session_state,
+                    "inspection_type",
+                    "row",
+                ),
+            )
 
         with col2:
-            if st.button(
+            st.button(
                 "Solar Inspection",
                 use_container_width=True,
-            ):
-                st.session_state.inspection_type = "solar"
-
-        st.info("Please select an inspection type.")
+                on_click=lambda: setattr(
+                    st.session_state,
+                    "inspection_type",
+                    "solar",
+                ),
+            )
 
         return
 
