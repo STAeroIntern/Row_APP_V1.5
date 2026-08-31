@@ -10,6 +10,7 @@ services:
     volumes:
       - /home:/home
       - /data:/data
+      - /home/gve/.streamlit:/root/.streamlit
 
     extra_hosts:
       - "host.docker.internal:host-gateway"
