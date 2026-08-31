@@ -331,9 +331,39 @@ def solar_inspection_page():
 
     st.write("### Solar Inspection")
 
-    # Solar-specific UI here
+    # --------------------------------------------------
+    # Buttons
+    # --------------------------------------------------
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        cancel = st.button(
+            "Cancel",
+            key=f"cancel_{fk}",
+            use_container_width=True,
+        )
+
+    with col2:
+        start = st.button(
+            "Start Processing",
+            key=f"start_{fk}",
+            use_container_width=True,
+            type="primary",
+        )
 
     st.write("Solar inspection feature goes here.")
+
+    # --------------------------------------------------
+    # Cancel
+    # --------------------------------------------------
+
+    if cancel:
+
+        st.session_state.form_key += 1
+        st.session_state.inspection_type = None
+
+        st.rerun()
 
 
 
