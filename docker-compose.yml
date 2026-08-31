@@ -12,5 +12,28 @@ services:
       - /data:/data
       - /home/gve/.streamlit:/root/.streamlit
 
+    env_file:
+      - .env
+
+    depends_on:
+      - mysql
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+
+  mysql:
+    image: mysql:8.0
+    container_name: row-mysql
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+
+volumes:
+  mysql_data:
