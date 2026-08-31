@@ -144,12 +144,21 @@ def delete_from_database(report_id):
 
     cursor.execute(
         """
-        DELETE FROM row_database.reports
+        DELETE FROM row_database.report_files
         WHERE id = %s
         """,
         (report_id,),
     )
 
+    conn.commit()
+
+    cursor.execute(
+            """
+            DELETE FROM row_database.reports
+            WHERE id = %s
+            """,
+            (report_id,),
+        )
     conn.commit()
 
     cursor.close()

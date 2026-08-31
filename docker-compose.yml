@@ -10,5 +10,6 @@ services:
     volumes:
       - /home:/home
       - /data:/data
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
