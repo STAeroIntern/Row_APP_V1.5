@@ -27,6 +27,10 @@ with open("config.yml", "r") as f:
 # UPLOAD DIALOG
 # ==================================================
 
+# ==================================================
+# UPLOAD DIALOG
+# ==================================================
+
 @st.dialog("New Inspection Report", width="large")
 def new_report_dialog():
 
@@ -37,37 +41,37 @@ def new_report_dialog():
     if "inspection_type" not in st.session_state:
         st.session_state.inspection_type = None
 
-    col1, col2 = st.columns(2)
+    # Only show the inspection type selection
+    # when nothing has been selected yet.
+    if st.session_state.inspection_type is None:
 
-    with col1:
-        if st.button(
-            "Row Inspection",
-            use_container_width=True,
-        ):
-            st.session_state.inspection_type = "row"
-            st.rerun()
+        col1, col2 = st.columns(2)
 
-    with col2:
-        if st.button(
-            "Solar Inspection",
-            use_container_width=True,
-        ):
-            st.session_state.inspection_type = "solar"
-            st.rerun()
+        with col1:
+            if st.button(
+                "Row Inspection",
+                use_container_width=True,
+            ):
+                st.session_state.inspection_type = "row"
+
+        with col2:
+            if st.button(
+                "Solar Inspection",
+                use_container_width=True,
+            ):
+                st.session_state.inspection_type = "solar"
+
+        st.info("Please select an inspection type.")
+
+        return
 
     # --------------------------------------------------
-    # Show selected feature
+    # SOLAR INSPECTION
     # --------------------------------------------------
 
     if st.session_state.inspection_type == "solar":
 
-        # Your Solar Inspection feature/page
         solar_inspection_page()
-
-        return
-
-    if st.session_state.inspection_type != "row":
-        st.info("Please select an inspection type.")
 
         return
 
@@ -75,254 +79,251 @@ def new_report_dialog():
     # ROW INSPECTION
     # ==================================================
 
-    # --------------------------------------------------
-    # Form key
-    # --------------------------------------------------
+    if st.session_state.inspection_type == "row":
 
-    if "form_key" not in st.session_state:
-        st.session_state.form_key = 0
+        # --------------------------------------------------
+        # Form key
+        # --------------------------------------------------
 
-    fk = st.session_state.form_key
+        if "form_key" not in st.session_state:
+            st.session_state.form_key = 0
 
-    # --------------------------------------------------
-    # Upload files
-    # --------------------------------------------------
+        fk = st.session_state.form_key
 
-    st.write("### Inspection Files")
+        # --------------------------------------------------
+        # Upload files
+        # --------------------------------------------------
 
-    col1, col2 = st.columns(2)
+        st.write("### Inspection Files")
 
-    with col1:
-        uploaded_video = st.file_uploader(
-            "Choose a MP4 file",
-            type=["mp4"],
-            key=f"video_{fk}",
-        )
+        col1, col2 = st.columns(2)
 
-    with col2:
-        uploaded_srt = st.file_uploader(
-            "Choose a SRT file",
-            type=["srt"],
-            key=f"srt_{fk}",
-        )
-
-    # --------------------------------------------------
-    # Inspection information
-    # --------------------------------------------------
-
-    st.write("### Inspection Information")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        selected_id = st.text_input(
-            "UAV ID",
-            key=f"uav_{fk}",
-        )
-
-        st.markdown("""
-            <style>
-            [data-testid="stNumberInput"] button {
-                display: none !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
-        safe_clearance = st.number_input(
-            "Safe Clearance Distance (m)",
-            min_value=0,
-            max_value=200,
-            value=None,
-            placeholder="0",
-            key=f"sc_{fk}",
-        )
-
-    with col2:
-
-        inspection_dt = st.datetime_input(
-            "Inspection Date Time",
-            value=None,
-            key=f"dt_{fk}",
-        )
-
-    st.divider()
-
-    # --------------------------------------------------
-    # Buttons
-    # --------------------------------------------------
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        cancel = st.button(
-            "Cancel",
-            key=f"cancel_{fk}",
-            use_container_width=True,
-        )
-
-    with col2:
-        start = st.button(
-            "Start Processing",
-            key=f"start_{fk}",
-            use_container_width=True,
-            type="primary",
-        )
-
-    # --------------------------------------------------
-    # Cancel
-    # --------------------------------------------------
-
-    if cancel:
-
-        st.session_state.form_key += 1
-        st.session_state.inspection_type = None
-
-        st.rerun()
-
-    # --------------------------------------------------
-    # Start Processing
-    # --------------------------------------------------
-
-    if start:
-
-        # Validation
-
-        if uploaded_video is None:
-            st.error("Please upload an MP4 file.")
-            return
-
-        if uploaded_srt is None:
-            st.error("Please upload an SRT file.")
-            return
-
-        if not selected_id.strip():
-            st.error("Please enter a UAV ID.")
-            return
-
-        if safe_clearance is None:
-            st.error(
-                "Please enter the Safe Clearance Distance."
+        with col1:
+            uploaded_video = st.file_uploader(
+                "Choose a MP4 file",
+                type=["mp4"],
+                key=f"video_{fk}",
             )
-            return
 
-        if inspection_dt is None:
-            st.error(
-                "Please select an inspection date/time."
+        with col2:
+            uploaded_srt = st.file_uploader(
+                "Choose a SRT file",
+                type=["srt"],
+                key=f"srt_{fk}",
             )
-            return
 
         # --------------------------------------------------
-        # Determine status
+        # Inspection information
         # --------------------------------------------------
 
-        processing_exist = has_processing_report()
+        st.write("### Inspection Information")
 
-        if processing_exist:
-            status = "Queued"
-        else:
-            status = "Processing"
+        col1, col2 = st.columns(2)
 
-        # --------------------------------------------------
-        # Generate filename
-        # --------------------------------------------------
+        with col1:
 
-        inspection_dt_utc = inspection_dt.replace(
-            tzinfo=timezone.utc
-        )
+            selected_id = st.text_input(
+                "UAV ID",
+                key=f"uav_{fk}",
+            )
 
-        filename = make_filename(
-            selected_id,
-            inspection_dt_utc,
-            safe_clearance,
-        )
+            safe_clearance = st.number_input(
+                "Safe Clearance Distance (m)",
+                min_value=0,
+                max_value=200,
+                value=None,
+                placeholder="0",
+                key=f"sc_{fk}",
+            )
 
-        # --------------------------------------------------
-        # Duplicate check
-        # --------------------------------------------------
+        with col2:
 
-        duplicate_status = has_duplicate_report(filename)
+            inspection_dt = st.datetime_input(
+                "Inspection Date Time",
+                value=None,
+                key=f"dt_{fk}",
+            )
 
-        if duplicate_status:
-            st.error("Report already exists.")
-            return
-
-        # --------------------------------------------------
-        # Add files to input
-        # --------------------------------------------------
-
-        add_files_to_input(
-            config["directories"]["input"],
-            [
-                uploaded_video,
-                uploaded_srt,
-            ],
-            filename,
-        )
+        st.divider()
 
         # --------------------------------------------------
-        # Create database record
+        # Buttons
         # --------------------------------------------------
 
-        report_db_id = create_report(
-            filename=filename,
-            uav_id=selected_id,
-            inspection_datetime=inspection_dt,
-            safe_clearance=safe_clearance,
-            status=status,
-        )
+        col1, col2 = st.columns(2)
+
+        with col1:
+            cancel = st.button(
+                "Cancel",
+                key=f"cancel_{fk}",
+                use_container_width=True,
+            )
+
+        with col2:
+            start = st.button(
+                "Start Processing",
+                key=f"start_{fk}",
+                use_container_width=True,
+                type="primary",
+            )
 
         # --------------------------------------------------
-        # Save files
+        # Cancel
         # --------------------------------------------------
 
-        DEST_DIR = "/data/EGAT/inspections/row"
+        if cancel:
 
-        os.makedirs(
-            DEST_DIR,
-            exist_ok=True,
-        )
+            st.session_state.form_key += 1
+            st.session_state.inspection_type = None
 
-        video_path = os.path.join(
-            DEST_DIR,
-            f"{filename}.mp4",
-        )
+            st.rerun()
 
-        srt_path = os.path.join(
-            DEST_DIR,
-            f"{filename}.srt",
-        )
+        
 
-        with open(video_path, "wb") as f:
-            f.write(uploaded_video.getvalue())
-
-        with open(srt_path, "wb") as f:
-            f.write(uploaded_srt.getvalue())
 
         # --------------------------------------------------
-        # Create Dropbox trigger
+        # Start Processing
         # --------------------------------------------------
 
-        dropbox_path = os.path.join(
-            DEST_DIR,
-            f"{filename}.dropbox",
-        )
+        if start:
 
-        with open(dropbox_path, "w"):
-            pass
+            # Validation
 
-        # --------------------------------------------------
-        # Reset form
-        # --------------------------------------------------
+            if uploaded_video is None:
+                st.error("Please upload an MP4 file.")
+                return
 
-        st.session_state.form_key += 1
-        st.session_state.inspection_type = None
+            if uploaded_srt is None:
+                st.error("Please upload an SRT file.")
+                return
 
-        st.success(
-            f"Report '{filename}' created."
-        )
+            if not selected_id.strip():
+                st.error("Please enter a UAV ID.")
+                return
 
-        st.rerun()
+            if safe_clearance is None:
+                st.error(
+                    "Please enter the Safe Clearance Distance."
+                )
+                return
+
+            if inspection_dt is None:
+                st.error(
+                    "Please select an inspection date/time."
+                )
+                return
+
+            # --------------------------------------------------
+            # Determine status
+            # --------------------------------------------------
+
+            processing_exist = has_processing_report()
+
+            if processing_exist:
+                status = "Queued"
+            else:
+                status = "Processing"
+
+            # --------------------------------------------------
+            # Generate filename
+            # --------------------------------------------------
+
+            inspection_dt_utc = inspection_dt.replace(
+                tzinfo=timezone.utc
+            )
+
+            filename = make_filename(
+                selected_id,
+                inspection_dt_utc,
+                safe_clearance,
+            )
+
+            # --------------------------------------------------
+            # Duplicate check
+            # --------------------------------------------------
+
+            duplicate_status = has_duplicate_report(filename)
+
+            if duplicate_status:
+                st.error("Report already exists.")
+                return
+
+            # --------------------------------------------------
+            # Add files to input
+            # --------------------------------------------------
+
+            add_files_to_input(
+                config["directories"]["input"],
+                [
+                    uploaded_video,
+                    uploaded_srt,
+                ],
+                filename,
+            )
+
+            # --------------------------------------------------
+            # Create database record
+            # --------------------------------------------------
+
+            report_db_id = create_report(
+                filename=filename,
+                uav_id=selected_id,
+                inspection_datetime=inspection_dt,
+                safe_clearance=safe_clearance,
+                status=status,
+            )
+
+            # --------------------------------------------------
+            # Save files
+            # --------------------------------------------------
+
+            DEST_DIR = "/data/EGAT/inspections/row"
+
+            os.makedirs(
+                DEST_DIR,
+                exist_ok=True,
+            )
+
+            video_path = os.path.join(
+                DEST_DIR,
+                f"{filename}.mp4",
+            )
+
+            srt_path = os.path.join(
+                DEST_DIR,
+                f"{filename}.srt",
+            )
+
+            with open(video_path, "wb") as f:
+                f.write(uploaded_video.getvalue())
+
+            with open(srt_path, "wb") as f:
+                f.write(uploaded_srt.getvalue())
+
+            # --------------------------------------------------
+            # Create Dropbox trigger
+            # --------------------------------------------------
+
+            dropbox_path = os.path.join(
+                DEST_DIR,
+                f"{filename}.dropbox",
+            )
+
+            with open(dropbox_path, "w"):
+                pass
+
+            # --------------------------------------------------
+            # Reset form
+            # --------------------------------------------------
+
+            st.session_state.form_key += 1
+            st.session_state.inspection_type = None
+
+            st.success(
+                f"Report '{filename}' created."
+            )
+
+            st.rerun()
 
         
 def solar_inspection_page():

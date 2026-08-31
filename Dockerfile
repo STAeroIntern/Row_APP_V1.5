@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-RUN git clone https://github.com/yanufo/Row_APP_V1.5.git .
+RUN git clone https://github.com/STAeroIntern/Row_APP_V1.5.git .
 
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
