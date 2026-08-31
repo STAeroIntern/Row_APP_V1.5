@@ -145,7 +145,7 @@ def delete_from_database(report_id):
     cursor.execute(
         """
         DELETE FROM row_database.report_files
-        WHERE id = %s
+        WHERE report_id = %s
         """,
         (report_id,),
     )
