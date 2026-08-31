@@ -45,6 +45,8 @@ else:
     uav_ids = []
 
 show_new_report()
-uavids_selection,status_selection,date_selection,clearance_selection,sorting_selection,order_selection = render_filter(uav_ids)
-filtered_df = filter_reports(df,uavids_selection,status_selection,date_selection,clearance_selection,sorting_selection,order_selection)
-display_table(filtered_df)
+
+
+# uavids_selection,status_selection,date_selection,clearance_selection,sorting_selection,order_selection = render_filter(uav_ids)
+# filtered_df = filter_reports(df,uavids_selection,status_selection,date_selection,clearance_selection,sorting_selection,order_selection)
+# display_table(filtered_df)
