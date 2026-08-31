@@ -31,6 +31,51 @@ with open("config.yml", "r") as f:
 def new_report_dialog():
 
     # --------------------------------------------------
+    # Inspection type selection
+    # --------------------------------------------------
+
+    if "inspection_type" not in st.session_state:
+        st.session_state.inspection_type = None
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button(
+            "Row Inspection",
+            use_container_width=True,
+        ):
+            st.session_state.inspection_type = "row"
+            st.rerun()
+
+    with col2:
+        if st.button(
+            "Solar Inspection",
+            use_container_width=True,
+        ):
+            st.session_state.inspection_type = "solar"
+            st.rerun()
+
+    # --------------------------------------------------
+    # Show selected feature
+    # --------------------------------------------------
+
+    if st.session_state.inspection_type == "solar":
+
+        # Your Solar Inspection feature/page
+        solar_inspection_page()
+
+        return
+
+    if st.session_state.inspection_type != "row":
+        st.info("Please select an inspection type.")
+
+        return
+
+    # ==================================================
+    # ROW INSPECTION
+    # ==================================================
+
+    # --------------------------------------------------
     # Form key
     # --------------------------------------------------
 
@@ -48,7 +93,6 @@ def new_report_dialog():
     col1, col2 = st.columns(2)
 
     with col1:
-
         uploaded_video = st.file_uploader(
             "Choose a MP4 file",
             type=["mp4"],
@@ -56,7 +100,6 @@ def new_report_dialog():
         )
 
     with col2:
-
         uploaded_srt = st.file_uploader(
             "Choose a SRT file",
             type=["srt"],
@@ -80,12 +123,11 @@ def new_report_dialog():
 
         st.markdown("""
             <style>
-            /* Hide +/- buttons on number inputs */
             [data-testid="stNumberInput"] button {
                 display: none !important;
             }
             </style>
-            """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
         safe_clearance = st.number_input(
             "Safe Clearance Distance (m)",
@@ -95,7 +137,6 @@ def new_report_dialog():
             placeholder="0",
             key=f"sc_{fk}",
         )
-                                
 
     with col2:
 
@@ -113,74 +154,63 @@ def new_report_dialog():
 
     col1, col2 = st.columns(2)
 
-    cancel = col1.button(
-        "Cancel",
-        key=f"cancel_{fk}",
-        use_container_width=True,
-    )
+    with col1:
+        cancel = st.button(
+            "Cancel",
+            key=f"cancel_{fk}",
+            use_container_width=True,
+        )
 
-    start = col2.button(
-        "Start Processing",
-        key=f"start_{fk}",
-        use_container_width=True,
-        type="primary",
-    )
+    with col2:
+        start = st.button(
+            "Start Processing",
+            key=f"start_{fk}",
+            use_container_width=True,
+            type="primary",
+        )
 
-    # ==================================================
-    # CANCEL
-    # ==================================================
+    # --------------------------------------------------
+    # Cancel
+    # --------------------------------------------------
 
     if cancel:
 
         st.session_state.form_key += 1
+        st.session_state.inspection_type = None
 
         st.rerun()
 
-    # ==================================================
-    # START PROCESSING
-    # ==================================================
+    # --------------------------------------------------
+    # Start Processing
+    # --------------------------------------------------
 
     if start:
 
-        # --------------------------------------------------
         # Validation
-        # --------------------------------------------------
 
         if uploaded_video is None:
-
-            st.error(
-                "Please upload an MP4 file."
-            )
+            st.error("Please upload an MP4 file.")
             return
 
         if uploaded_srt is None:
-
-            st.error(
-                "Please upload an SRT file."
-            )
+            st.error("Please upload an SRT file.")
             return
 
         if not selected_id.strip():
-
-            st.error(
-                "Please enter a UAV ID."
-            )
+            st.error("Please enter a UAV ID.")
             return
 
         if safe_clearance is None:
-
             st.error(
                 "Please enter the Safe Clearance Distance."
             )
             return
 
         if inspection_dt is None:
-
             st.error(
                 "Please select an inspection date/time."
             )
             return
-
 
         # --------------------------------------------------
         # Determine status
@@ -207,14 +237,15 @@ def new_report_dialog():
             safe_clearance,
         )
 
-        ##Condition check
-        duplicate_status = has_duplicate_report(filename)
-        if duplicate_status == True:
-            st.error(
-                "Report already exists."
-            )
-            return
+        # --------------------------------------------------
+        # Duplicate check
+        # --------------------------------------------------
 
+        duplicate_status = has_duplicate_report(filename)
+
+        if duplicate_status:
+            st.error("Report already exists.")
+            return
 
         # --------------------------------------------------
         # Add files to input
@@ -263,16 +294,10 @@ def new_report_dialog():
         )
 
         with open(video_path, "wb") as f:
-
-            f.write(
-                uploaded_video.getvalue()
-            )
+            f.write(uploaded_video.getvalue())
 
         with open(srt_path, "wb") as f:
-
-            f.write(
-                uploaded_srt.getvalue()
-            )
+            f.write(uploaded_srt.getvalue())
 
         # --------------------------------------------------
         # Create Dropbox trigger
@@ -291,12 +316,23 @@ def new_report_dialog():
         # --------------------------------------------------
 
         st.session_state.form_key += 1
+        st.session_state.inspection_type = None
 
         st.success(
             f"Report '{filename}' created."
         )
 
         st.rerun()
+
+        
+def solar_inspection_page():
+
+    st.write("### Solar Inspection")
+
+    # Solar-specific UI here
+
+    st.write("Solar inspection feature goes here.")
+
 
 
 # ==================================================
