@@ -508,6 +508,81 @@ def render_filter(uav_ids):
         order_selected,
     )
 
+def render_solar_filter(uav_ids):
+
+    with st.expander(
+        "Filters & Sort",
+        expanded=True,
+    ):
+
+        f1, f2, f3, f4 = st.columns(4)
+
+        # -----------------------------------------
+        # UAV
+        # -----------------------------------------
+        uav_selected = f1.multiselect(
+            "UAV ID",
+            options=uav_ids,
+            key="uav_filter",
+        )
+
+        # -----------------------------------------
+        # Status
+        # -----------------------------------------
+        status_selected = f2.multiselect(
+            "Status",
+            options=STATUS_OPTIONS,
+            key="status_filter",
+        )
+
+        # -----------------------------------------
+        # Date
+        # -----------------------------------------
+        date_selected = f3.date_input(
+            "Inspection Date range",
+            value=(),
+            key="date_range",
+        )
+
+
+        # -----------------------------------------
+        # Sorting
+        # -----------------------------------------
+        sorting_criteria = f4.selectbox(
+            "Sort by",
+            options=[""] + SORT_OPTIONS,
+            key="sort_by",
+        )
+        f7, f8, f9 = st.columns(3)
+        # -----------------------------------------
+        # Order
+        # -----------------------------------------
+        order_selected = f7.radio(
+            "Order",
+            options=["", "Descending", "Ascending"],
+            horizontal=True,
+            key="sort_order",
+        )
+
+        # -----------------------------------------
+        # Reset
+        # -----------------------------------------
+        f8.button(
+            "Reset",
+            key="report_reset_button",
+            type="secondary",
+            use_container_width=True,
+            on_click=reset_filters,
+        )
+
+    return (
+        uav_selected,
+        status_selected,
+        date_selected,
+        sorting_criteria,
+        order_selected,
+    )
+
 def filter_reports(
     df,
     uavids_selection,
