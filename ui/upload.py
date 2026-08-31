@@ -330,7 +330,61 @@ def new_report_dialog():
 def solar_inspection_page():
 
     st.write("### Solar Inspection")
+    # --------------------------------------------------
+    # Form key
+    # --------------------------------------------------
 
+    if "form_key" not in st.session_state:
+        st.session_state.form_key = 0
+
+    fk = st.session_state.form_key
+
+    # --------------------------------------------------
+    # Upload files
+    # --------------------------------------------------
+
+    st.write("### Inspection Files")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        uploaded_video = st.file_uploader(
+            "Choose a MP4 file",
+            type=["mp4"],
+            key=f"solar_video_{fk}",
+        )
+
+    with col2:
+        uploaded_srt = st.file_uploader(
+            "Choose a SRT file",
+            type=["srt"],
+            key=f"solar_srt_{fk}",
+        )
+    # --------------------------------------------------
+    # Inspection information
+    # --------------------------------------------------
+
+    st.write("### Inspection Information")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        selected_id = st.text_input(
+            "UAV ID",
+            key=f"uav_{fk}",
+        )
+
+   
+    with col2:
+    
+        inspection_dt = st.datetime_input(
+            "Inspection Date Time",
+            value=None,
+            key=f"dt_{fk}",
+        )
+
+    st.divder()
     # --------------------------------------------------
     # Buttons
     # --------------------------------------------------
@@ -340,14 +394,14 @@ def solar_inspection_page():
     with col1:
         cancel = st.button(
             "Cancel",
-            key=f"cancel_{fk}",
+            key=f"solar_cancel_{fk}",
             use_container_width=True,
         )
 
     with col2:
         start = st.button(
             "Start Processing",
-            key=f"start_{fk}",
+            key=f"solar_start_{fk}",
             use_container_width=True,
             type="primary",
         )
