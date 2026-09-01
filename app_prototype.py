@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 
 from sql_tool.queries import get_all_reports
 from ui.upload import show_new_report
-
+import base64
 
 st.set_page_config(
     page_title="RoW Inspection Report",
@@ -29,16 +29,12 @@ st.markdown("""
 # 3D Drone Viewer
 # ============================================================
 
-import streamlit as st
-import streamlit.components.v1 as components
-import base64
-
 
 # ============================================================
 # 3D Drone Viewer
 # ============================================================
 
-st.title("3D Drone Viewer")
+st.title("Row Inspection Report")
 
 OBJ_PATH = "/app/models/drone_costum.obj"
 
@@ -272,9 +268,9 @@ try {{
 
             child.material =
                 new THREE.MeshStandardMaterial({{
-                    color: 0x777777,
+                    color: 0xB22222,
                     roughness: 0.45,
-                    metalness: 0.2
+                    metalness: 0.5
                 }});
 
             child.castShadow = true;
@@ -431,7 +427,7 @@ components.html(
 # Row Inspection Report
 # ============================================================
 
-st.title("Row Inspection Report")
+
 
 
 # ============================================================
