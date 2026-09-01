@@ -34,11 +34,14 @@ import streamlit.components.v1 as components
 import base64
 
 
+# ============================================================
+# 3D Drone Viewer
+# ============================================================
+
 st.title("3D Drone Viewer")
 
 OBJ_PATH = "/app/models/drone_costum.obj"
 
-# Read OBJ
 with open(OBJ_PATH, "rb") as f:
     obj_base64 = base64.b64encode(f.read()).decode("utf-8")
 
@@ -63,12 +66,17 @@ html, body {{
     width: 100%;
     height: 100%;
     overflow: hidden;
+    background: transparent;
 }}
 
 #viewer {{
     width: 100%;
-    height: 600px;
-    background: #eeeeee;
+    height: 500px;
+    background: transparent;
+}}
+
+canvas {{
+    display: block;
 }}
 
 #error {{
@@ -87,22 +95,22 @@ html, body {{
 <body>
 
 <div id="viewer"></div>
+
 <div id="error"></div>
 
 
 <script>
 
-console.log("Starting drone viewer...");
+const container = document.getElementById("viewer");
 
 
 // ============================================================
 // Scene
 // ============================================================
 
-const container = document.getElementById("viewer");
-
 const scene = new THREE.Scene();
 
+// Transparent background
 scene.background = null;
 
 
@@ -117,7 +125,11 @@ const camera = new THREE.PerspectiveCamera(
     100000
 );
 
-camera.position.set(5, 5, 5);
+camera.position.set(
+    6,
+    4,
+    6
+);
 
 
 // ============================================================
@@ -125,31 +137,32 @@ camera.position.set(5, 5, 5);
 // ============================================================
 
 const renderer = new THREE.WebGLRenderer({{
-    antialias: true
+    antialias: true,
+    alpha: true
 }});
 
 renderer.setPixelRatio(window.devicePixelRatio);
-
-renderer.setClearColor(
-    0x000000,
-    0
-);
 
 renderer.setSize(
     container.clientWidth,
     container.clientHeight
 );
 
+renderer.setClearColor(
+    0x000000,
+    0
+);
+
 container.appendChild(renderer.domElement);
 
 
 // ============================================================
-// Lights
+// Lighting
 // ============================================================
 
 const ambient = new THREE.AmbientLight(
     0xffffff,
-    2
+    2.5
 );
 
 scene.add(ambient);
@@ -157,7 +170,7 @@ scene.add(ambient);
 
 const light1 = new THREE.DirectionalLight(
     0xffffff,
-    3
+    4
 );
 
 light1.position.set(
@@ -176,7 +189,7 @@ const light2 = new THREE.DirectionalLight(
 
 light2.position.set(
     -10,
-    5,
+    10,
     -10
 );
 
@@ -196,9 +209,17 @@ controls.enableDamping = true;
 
 controls.dampingFactor = 0.05;
 
+controls.enablePan = true;
+
+controls.enableZoom = true;
+
+controls.minDistance = 1;
+
+controls.maxDistance = 100;
+
 
 // ============================================================
-// OBJ DATA
+// OBJ
 // ============================================================
 
 const objBase64 = "{obj_base64}";
@@ -208,12 +229,17 @@ function base64ToString(base64) {{
 
     const binary = atob(base64);
 
-    let bytes = new Uint8Array(
+    const bytes = new Uint8Array(
         binary.length
     );
 
-    for (let i = 0; i < binary.length; i++) {{
-        bytes[i] = binary.charCodeAt(i);
+    for (
+        let i = 0;
+        i < binary.length;
+        i++
+    ) {{
+        bytes[i] =
+            binary.charCodeAt(i);
     }}
 
     return new TextDecoder().decode(bytes);
@@ -221,31 +247,19 @@ function base64ToString(base64) {{
 
 
 // ============================================================
-// Load OBJ
+// Load Drone
 // ============================================================
 
 try {{
 
-    console.log("Converting OBJ data...");
+    const objText =
+        base64ToString(objBase64);
 
-    const objText = base64ToString(objBase64);
+    const loader =
+        new THREE.OBJLoader();
 
-    console.log(
-        "OBJ size:",
-        objText.length
-    );
-
-
-    const loader = new THREE.OBJLoader();
-
-    console.log("Parsing OBJ...");
-
-    const drone = loader.parse(objText);
-
-    console.log(
-        "Drone loaded:",
-        drone
-    );
+    const drone =
+        loader.parse(objText);
 
 
     // ========================================================
@@ -259,10 +273,12 @@ try {{
             child.material =
                 new THREE.MeshStandardMaterial({{
                     color: 0x777777,
-                    roughness: 0.5,
+                    roughness: 0.45,
                     metalness: 0.2
                 }});
 
+            child.castShadow = true;
+            child.receiveShadow = true;
         }}
 
     }});
@@ -272,51 +288,49 @@ try {{
 
 
     // ========================================================
-    // Find model dimensions
+    // Get dimensions
     // ========================================================
 
     const box =
         new THREE.Box3().setFromObject(drone);
 
     const center =
-        box.getCenter(new THREE.Vector3());
+        box.getCenter(
+            new THREE.Vector3()
+        );
 
     const size =
-        box.getSize(new THREE.Vector3());
-
-
-    console.log(
-        "Model size:",
-        size.x,
-        size.y,
-        size.z
-    );
+        box.getSize(
+            new THREE.Vector3()
+        );
 
 
     // ========================================================
     // Center
     // ========================================================
 
-    drone.position.x -= center.x;
-    drone.position.y -= center.y;
-    drone.position.z -= center.z;
+    drone.position.sub(center);
 
 
     // ========================================================
-    // Scale
+    // BIGGER MODEL
     // ========================================================
 
-    const maxSize = Math.max(
-        size.x,
-        size.y,
-        size.z
-    );
+    const maxSize =
+        Math.max(
+            size.x,
+            size.y,
+            size.z
+        );
 
-    const targetsize = 20;
 
-    const scale = targetsize / maxSize;
+    // Increase this for an even bigger drone
+    const targetSize = 9;
 
-    drone.scale.setScalar(scale)
+    const scale =
+        targetSize / maxSize;
+
+    drone.scale.setScalar(scale);
 
 
     // ========================================================
@@ -325,7 +339,7 @@ try {{
 
     camera.position.set(
         7,
-        5,
+        4.5,
         7
     );
 
@@ -334,6 +348,7 @@ try {{
         0,
         0
     );
+
 
     controls.target.set(
         0,
@@ -344,18 +359,15 @@ try {{
     controls.update();
 
 
-    console.log("Drone viewer initialized");
-
-
 }} catch (error) {{
 
-    console.error(
-        "DRONE ERROR:",
-        error
-    );
+    console.error(error);
 
-    document.getElementById("error").innerText =
-        "Error loading 3D model: " + error.message;
+    document.getElementById(
+        "error"
+    ).innerText =
+        "Error loading drone: " +
+        error.message;
 
 }}
 
@@ -412,7 +424,7 @@ animate();
 
 components.html(
     html,
-    height=620
+    height=520
 )
 
 # ============================================================
