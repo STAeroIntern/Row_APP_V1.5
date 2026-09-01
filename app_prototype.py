@@ -28,6 +28,7 @@ st.markdown("""
 # ============================================================
 # New Report
 # ============================================================
+st.title("Row Inspection Report")
 
 show_new_report()
 
@@ -40,7 +41,7 @@ show_new_report()
 # 3D Drone Viewer
 # ============================================================
 
-st.title("Row Inspection Report")
+
 
 OBJ_PATH = "/app/models/drone_costum.obj"
 
