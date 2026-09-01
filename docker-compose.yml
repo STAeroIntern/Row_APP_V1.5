@@ -11,6 +11,7 @@ services:
       - /home:/home
       - /data:/data
       - /home/gve/.streamlit:/root/.streamlit
+      - /home/hj/Downloads/ROW_PROJ/Row_APP_V1.5/models:/app/models
 
     env_file:
       - .env

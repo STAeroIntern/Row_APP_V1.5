@@ -29,68 +29,81 @@ st.markdown("""
 # 3D Drone Viewer
 # ============================================================
 
+import streamlit as st
+import streamlit.components.v1 as components
+import base64
+
+
 st.title("3D Drone Viewer")
 
-html = """
+OBJ_PATH = "/app/models/drone_costum.obj"
+
+# Read OBJ
+with open(OBJ_PATH, "rb") as f:
+    obj_base64 = base64.b64encode(f.read()).decode("utf-8")
+
+
+html = f"""
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8">
 
-    <style>
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-        #viewer {
-            width: 100%;
-            height: 600px;
-            background: #f2f2f2;
-        }
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-        canvas {
-            display: block;
-        }
-    </style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
+
+<style>
+
+html, body {{
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}}
+
+#viewer {{
+    width: 100%;
+    height: 600px;
+    background: #eeeeee;
+}}
+
+#error {{
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: red;
+    font-family: Arial;
+    font-size: 16px;
+}}
+
+</style>
+
 </head>
 
 <body>
 
 <div id="viewer"></div>
-
-<script type="importmap">
-{
-    "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
-    }
-}
-</script>
-
-<script type="module">
-
-import * as THREE from 'three';
-
-import { OrbitControls }
-    from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
-
-import { OBJLoader }
-    from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/OBJLoader.js';
+<div id="error"></div>
 
 
-const container = document.getElementById("viewer");
+<script>
+
+console.log("Starting drone viewer...");
 
 
 // ============================================================
 // Scene
 // ============================================================
 
+const container = document.getElementById("viewer");
+
 const scene = new THREE.Scene();
 
-scene.background = new THREE.Color(0xf2f2f2);
+scene.background = new THREE.Color(0xeeeeee);
 
 
 // ============================================================
@@ -100,7 +113,7 @@ scene.background = new THREE.Color(0xf2f2f2);
 const camera = new THREE.PerspectiveCamera(
     45,
     container.clientWidth / container.clientHeight,
-    0.1,
+    0.01,
     100000
 );
 
@@ -111,9 +124,9 @@ camera.position.set(5, 5, 5);
 // Renderer
 // ============================================================
 
-const renderer = new THREE.WebGLRenderer({
+const renderer = new THREE.WebGLRenderer({{
     antialias: true
-});
+}});
 
 renderer.setPixelRatio(window.devicePixelRatio);
 
@@ -122,58 +135,54 @@ renderer.setSize(
     container.clientHeight
 );
 
-renderer.shadowMap.enabled = true;
-
 container.appendChild(renderer.domElement);
 
 
 // ============================================================
-// Lighting
+// Lights
 // ============================================================
 
-const ambientLight = new THREE.AmbientLight(
+const ambient = new THREE.AmbientLight(
     0xffffff,
-    2.0
+    2
 );
 
-scene.add(ambientLight);
+scene.add(ambient);
 
 
-const directionalLight = new THREE.DirectionalLight(
+const light1 = new THREE.DirectionalLight(
     0xffffff,
-    3.0
+    3
 );
 
-directionalLight.position.set(
+light1.position.set(
     10,
     20,
     10
 );
 
-directionalLight.castShadow = true;
-
-scene.add(directionalLight);
+scene.add(light1);
 
 
-const fillLight = new THREE.DirectionalLight(
+const light2 = new THREE.DirectionalLight(
     0xffffff,
-    1.5
+    2
 );
 
-fillLight.position.set(
+light2.position.set(
     -10,
     5,
     -10
 );
 
-scene.add(fillLight);
+scene.add(light2);
 
 
 // ============================================================
 // Controls
 // ============================================================
 
-const controls = new OrbitControls(
+const controls = new THREE.OrbitControls(
     camera,
     renderer.domElement
 );
@@ -182,134 +191,170 @@ controls.enableDamping = true;
 
 controls.dampingFactor = 0.05;
 
-controls.enablePan = true;
 
-controls.minDistance = 0.1;
+// ============================================================
+// OBJ DATA
+// ============================================================
 
-controls.maxDistance = 100000;
+const objBase64 = "{obj_base64}";
+
+
+function base64ToString(base64) {{
+
+    const binary = atob(base64);
+
+    let bytes = new Uint8Array(
+        binary.length
+    );
+
+    for (let i = 0; i < binary.length; i++) {{
+        bytes[i] = binary.charCodeAt(i);
+    }}
+
+    return new TextDecoder().decode(bytes);
+}}
 
 
 // ============================================================
 // Load OBJ
 // ============================================================
 
-const loader = new OBJLoader();
+try {{
 
-loader.load(
-    "models/drone_costum.obj",
+    console.log("Converting OBJ data...");
 
-    function(object) {
+    const objText = base64ToString(objBase64);
 
-        console.log("Drone OBJ loaded");
-
-        // Apply a default material because OBJ may not
-        // have its MTL/material information available.
-
-        object.traverse(function(child) {
-
-            if (child.isMesh) {
-
-                child.material = new THREE.MeshStandardMaterial({
-                    color: 0x888888,
-                    roughness: 0.55,
-                    metalness: 0.25
-                });
-
-                child.castShadow = true;
-                child.receiveShadow = true;
-            }
-
-        });
+    console.log(
+        "OBJ size:",
+        objText.length
+    );
 
 
-        scene.add(object);
+    const loader = new THREE.OBJLoader();
+
+    console.log("Parsing OBJ...");
+
+    const drone = loader.parse(objText);
+
+    console.log(
+        "Drone loaded:",
+        drone
+    );
 
 
-        // ====================================================
-        // Automatically center and scale the drone
-        // ====================================================
+    // ========================================================
+    // Material
+    // ========================================================
 
-        const box = new THREE.Box3().setFromObject(object);
+    drone.traverse(function(child) {{
 
-        const center = box.getCenter(new THREE.Vector3());
+        if (child instanceof THREE.Mesh) {{
 
-        const size = box.getSize(new THREE.Vector3());
+            child.material =
+                new THREE.MeshStandardMaterial({{
+                    color: 0x777777,
+                    roughness: 0.5,
+                    metalness: 0.2
+                }});
 
+        }}
 
-        object.position.sub(center);
-
-
-        const maxDimension = Math.max(
-            size.x,
-            size.y,
-            size.z
-        );
-
-
-        // Normalize model size
-        const targetSize = 5;
-
-        const scale = targetSize / maxDimension;
-
-        object.scale.setScalar(scale);
+    }});
 
 
-        // ====================================================
-        // Position camera automatically
-        // ====================================================
-
-        const distance = targetSize * 2.2;
-
-        camera.position.set(
-            distance,
-            distance * 0.7,
-            distance
-        );
-
-        camera.lookAt(0, 0, 0);
-
-        controls.target.set(0, 0, 0);
-
-        controls.update();
-    },
+    scene.add(drone);
 
 
-    function(xhr) {
+    // ========================================================
+    // Find model dimensions
+    // ========================================================
 
-        if (xhr.total > 0) {
+    const box =
+        new THREE.Box3().setFromObject(drone);
 
-            console.log(
-                "Loading: " +
-                Math.round((xhr.loaded / xhr.total) * 100) +
-                "%"
-            );
+    const center =
+        box.getCenter(new THREE.Vector3());
 
-        }
-
-    },
+    const size =
+        box.getSize(new THREE.Vector3());
 
 
-    function(error) {
+    console.log(
+        "Model size:",
+        size.x,
+        size.y,
+        size.z
+    );
 
-        console.error(
-            "Error loading drone OBJ:",
-            error
-        );
 
-        container.innerHTML = `
-            <div style="
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                height:100%;
-                font-family:Arial;
-                color:#cc0000;
-            ">
-                Failed to load drone model.
-            </div>
-        `;
-    }
-);
+    // ========================================================
+    // Center
+    // ========================================================
+
+    drone.position.x -= center.x;
+    drone.position.y -= center.y;
+    drone.position.z -= center.z;
+
+
+    // ========================================================
+    // Scale
+    // ========================================================
+
+    const maxSize = Math.max(
+        size.x,
+        size.y,
+        size.z
+    );
+
+    const scale = 5 / maxSize;
+
+    drone.scale.set(
+        scale,
+        scale,
+        scale
+    );
+
+
+    // ========================================================
+    // Camera
+    // ========================================================
+
+    camera.position.set(
+        7,
+        5,
+        7
+    );
+
+    camera.lookAt(
+        0,
+        0,
+        0
+    );
+
+    controls.target.set(
+        0,
+        0,
+        0
+    );
+
+    controls.update();
+
+
+    console.log("Drone viewer initialized");
+
+
+}} catch (error) {{
+
+    console.error(
+        "DRONE ERROR:",
+        error
+    );
+
+    document.getElementById("error").innerText =
+        "Error loading 3D model: " + error.message;
+
+}}
 
 
 // ============================================================
@@ -318,7 +363,7 @@ loader.load(
 
 window.addEventListener(
     "resize",
-    function() {
+    function() {{
 
         camera.aspect =
             container.clientWidth /
@@ -331,7 +376,7 @@ window.addEventListener(
             container.clientHeight
         );
 
-    }
+    }}
 );
 
 
@@ -339,7 +384,7 @@ window.addEventListener(
 // Animation
 // ============================================================
 
-function animate() {
+function animate() {{
 
     requestAnimationFrame(animate);
 
@@ -349,21 +394,23 @@ function animate() {
         scene,
         camera
     );
-}
+
+}}
 
 animate();
 
 </script>
 
 </body>
+
 </html>
 """
 
+
 components.html(
     html,
-    height=620,
+    height=620
 )
-
 
 # ============================================================
 # Row Inspection Report
