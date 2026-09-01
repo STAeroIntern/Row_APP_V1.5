@@ -103,7 +103,7 @@ const container = document.getElementById("viewer");
 
 const scene = new THREE.Scene();
 
-scene.background = new THREE.Color(0xeeeeee);
+scene.background = null;
 
 
 // ============================================================
@@ -307,13 +307,11 @@ try {{
         size.z
     );
 
-    const scale = 5 / maxSize;
+    const targetsize = 20;
 
-    drone.scale.set(
-        scale,
-        scale,
-        scale
-    );
+    const scale = targetsize / maxSize;
+
+    drone.scale.setScalar(scale)
 
 
     // ========================================================
