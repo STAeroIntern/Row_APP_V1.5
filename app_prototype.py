@@ -26,6 +26,12 @@ st.markdown("""
 
 
 # ============================================================
+# New Report
+# ============================================================
+
+show_new_report()
+
+# ============================================================
 # 3D Drone Viewer
 # ============================================================
 
@@ -423,53 +429,43 @@ components.html(
     height=520
 )
 
-# ============================================================
-# Row Inspection Report
-# ============================================================
 
 
+# # ============================================================
+# # Database
+# # ============================================================
+
+# db_report = get_all_reports()
+
+# df = pd.DataFrame(db_report)
 
 
-# ============================================================
-# Database
-# ============================================================
+# # ============================================================
+# # Session State
+# # ============================================================
 
-db_report = get_all_reports()
+# if "popover_open" not in st.session_state:
+#     st.session_state.popover_open = False
 
-df = pd.DataFrame(db_report)
-
-
-# ============================================================
-# Session State
-# ============================================================
-
-if "popover_open" not in st.session_state:
-    st.session_state.popover_open = False
-
-if "confirm_cancel" not in st.session_state:
-    st.session_state.confirm_cancel = False
+# if "confirm_cancel" not in st.session_state:
+#     st.session_state.confirm_cancel = False
 
 
-# ============================================================
-# UAV IDs
-# ============================================================
+# # ============================================================
+# # UAV IDs
+# # ============================================================
 
-if not df.empty and "uav_id" in df.columns:
+# if not df.empty and "uav_id" in df.columns:
 
-    uav_ids = sorted(
-        df["uav_id"]
-        .dropna()
-        .unique()
-        .tolist()
-    )
+#     uav_ids = sorted(
+#         df["uav_id"]
+#         .dropna()
+#         .unique()
+#         .tolist()
+#     )
 
-else:
+# else:
 
-    uav_ids = []
+#     uav_ids = []
 
 
-# ============================================================
-# New Report
-# ============================================================
-
-show_new_report()
