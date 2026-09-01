@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sql_tool.queries import get_all_reports,get_reports_status_by_ids,get_report_by_id,get_all_dag_run_id,get_all_filename,delete_from_database
+from sql_tool.queries import get_all_reports,get_reports_status_by_ids,get_report_by_id,get_all_dag_run_id,get_all_filename,delete_from_database,get_all_solar_filename,delete_from_solar_database,get_solar_report_by_id,get_solar_reports_status_by_ids
 from ui.preview import preview_dialog
 from pathlib import Path
 import requests
@@ -68,6 +68,27 @@ def refresh_statuses(report_ids, status_placeholders):
                 status_badge_html(status),
                 unsafe_allow_html=True,
             )
+
+@st.fragment(run_every=5)
+def refresh_solar_statuses(report_ids, status_placeholders):
+
+    latest_reports = get_solar_reports_status_by_ids(report_ids)
+
+    status_map = {
+        report["id"]: report["status"]
+        for report in latest_reports
+    }
+
+    for rid, placeholder in status_placeholders.items():
+
+        status = status_map.get(rid)
+
+        if status is not None:
+            placeholder.markdown(
+                status_badge_html(status),
+                unsafe_allow_html=True,
+            )
+
 # Display function
 def get_selected_visible_ids(df):
     """
@@ -407,6 +428,311 @@ def display_table(df):
         )
     else:
         st.write("")
+
+
+def display_solar_table(df):
+
+    # ==================================================
+    # VISIBLE REPORT IDS
+    # ==================================================
+    if not df.empty:
+        visible_ids = df["id"].tolist()
+
+        completed_ids = df.loc[df["status"] == "Completed","id",].tolist()
+
+        # ==================================================
+        # ACTION BAR
+        # ==================================================
+
+        selected_visible_ids = get_selected_visible_ids(df)
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            select_all_report = st.button(
+                "Select All",
+                key="select_all_report",
+                use_container_width=True,
+            )
+
+        with col2:
+            clear_all_report = st.button(
+                "Clear All",
+                key="clear_all_report",
+                use_container_width=True,
+            )
+
+        with col3:
+            download = st.button(
+                "Download",
+                key="download_report",
+                use_container_width=True,
+                disabled=not selected_visible_ids,
+            )
+
+        with col4:
+            delete_all_report = st.button(
+                "Delete",
+                key="delete_all_report",
+                type="secondary",
+                use_container_width=True,
+                disabled=not selected_visible_ids,
+            )
+
+        # ==================================================
+        # SELECT ALL
+        # ==================================================
+
+        if select_all_report:
+
+            for rid in completed_ids:
+
+                st.session_state[
+                    f"chk_{rid}"
+                ] = True
+
+            st.rerun()
+
+        # ==================================================
+        # CLEAR ALL
+        # ==================================================
+
+        if clear_all_report:
+
+            for rid in visible_ids:
+
+                st.session_state[
+                    f"chk_{rid}"
+                ] = False
+
+            st.rerun()
+
+        # ==================================================
+        # DOWNLOAD
+        # ==================================================
+
+        if download:
+
+            selected_visible_ids = get_selected_visible_ids(df)
+
+            if selected_visible_ids:
+
+                selected_reports = df[
+                    df["id"].isin(selected_visible_ids)
+                ].to_dict("records")
+
+                download_dialog(
+                    selected_reports
+                )
+
+            else:
+
+                st.warning(
+                    "Please select at least one report."
+                )
+        # ==================================================
+        # DELETE
+        # ==================================================
+
+        if delete_all_report:
+
+            ids_to_delete = get_selected_visible_ids(df)
+
+            if not ids_to_delete:
+
+                st.warning(
+                    "No reports are selected."
+                )
+
+            else:
+
+                for report_id in ids_to_delete:
+
+                    # ----------------------------------
+                    # Database information
+                    # ----------------------------------
+
+                    dag_run_id = get_all_dag_run_id(
+                        report_id
+                    )
+
+                    filename = get_all_solar_filename(
+                        report_id
+                    )
+
+                    # ----------------------------------
+                    # Stop Airflow
+                    # ----------------------------------
+
+                    if dag_run_id:
+
+                        stop_airflow_run(
+                            dag_id="EGATWorkflowPipeline",
+                            dag_run_id=dag_run_id,
+                        )
+
+                    # ----------------------------------
+                    # Delete database record
+                    # ----------------------------------
+
+                    delete_from_solar_database(
+                        report_id
+                    )
+
+                    # ----------------------------------
+                    # Delete input file
+                    # ----------------------------------
+
+                    INPUT_DIR = Path(
+                        "/data/EGAT/inspections/Solar"
+                    )
+
+                    if INPUT_DIR.exists() and filename:
+
+                        for file_path in INPUT_DIR.iterdir():
+
+                            if (
+                                file_path.is_file()
+                                and file_path.stem == filename
+                            ):
+                                file_path.unlink()
+
+                    # ----------------------------------
+                    # Remove selection state
+                    # ----------------------------------
+                    st.session_state.pop(
+                        f"chk_{report_id}",
+                        None,
+                    )
+
+                st.rerun()
+
+        # ==================================================
+        # TABLE HEADER
+        # ==================================================
+
+        (
+            h_check,
+            h_name,
+            h_uav,
+            h_time,
+            h_status,
+        ) = st.columns(COL_WEIGHTS)
+
+        h_check.markdown("**Select**")
+        h_name.markdown("**Filename**")
+        h_uav.markdown("**UAV ID**")
+        h_time.markdown("**Inspection Date Time**")
+        h_status.markdown("**Status**")
+
+        # ==================================================
+        # STATUS PLACEHOLDERS
+        # ==================================================
+
+        status_placeholders = {}
+
+        # ==================================================
+        # TABLE ROWS
+        # ==================================================
+
+        for _, report in df.iterrows():
+
+            rid = report["id"]
+
+            (
+                c_check,
+                c_name,
+                c_uav,
+                c_time,
+                c_status,
+            ) = st.columns(COL_WEIGHTS)
+
+            # ----------------------------------
+            # Checkbox
+            # ----------------------------------
+
+            c_check.checkbox(
+                "select",
+                key=f"chk_{rid}",
+                label_visibility="collapsed",
+            )
+
+            # ----------------------------------
+            # Filename / Preview
+            # ----------------------------------
+
+            clicked = c_name.button(
+                report["filename"],
+                key=f"btn_{rid}",
+                use_container_width=True,
+            )
+
+            if clicked:
+
+                latest_report = get_solar_report_by_id(
+                    rid
+                )
+
+                if latest_report is None:
+
+                    st.error(
+                        "Report not found."
+                    )
+
+                elif latest_report["status"] == "Completed":
+
+                    preview_dialog(rid)
+
+                else:
+
+                    st.warning(
+                        f"Report is currently "
+                        f"{latest_report['status']}."
+                    )
+
+            # ----------------------------------
+            # UAV
+            # ----------------------------------
+
+            c_uav.markdown(
+                str(report["uav_id"])
+            )
+
+            # ----------------------------------
+            # Date
+            # ----------------------------------
+
+            inspection_time = pd.to_datetime(
+                report["inspection_datetime"]
+            )
+
+            c_time.markdown(
+                inspection_time.strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+            )
+
+
+            # ----------------------------------
+            # Status
+            # ----------------------------------
+
+            with c_status:
+
+                status_placeholders[rid] = (
+                    st.empty()
+                )
+
+        # ==================================================
+        # REFRESH STATUSES
+        # ==================================================
+
+        refresh_statuses(
+            visible_ids,
+            status_placeholders,
+        )
+    else:
+        st.write("")
 def reset_filters():
     st.session_state["uav_filter"] = []
     st.session_state["status_filter"] = []
@@ -663,6 +989,85 @@ def filter_reports(
         "Inspection Date Time": "inspection_datetime",
         "Filename": "filename",
         "Clearance Distance": "safe_clearance_distance",
+        "UAV ID": "uav_id",
+        "Status": "status",
+    }
+
+    if sorting_selection in SORT_COLUMNS:
+
+        sort_column = SORT_COLUMNS[sorting_selection]
+
+        ascending = (
+            order_selection == "Ascending"
+        )
+
+        filtered_df = filtered_df.sort_values(
+            by=sort_column,
+            ascending=ascending,
+        )
+    else:
+        filtered_df = filtered_df.sort_index(ascending=False)
+
+    return filtered_df
+
+
+def filter_solar_reports(
+    df,
+    uavids_selection,
+    status_selection,
+    date_selection,
+    sorting_selection,
+    order_selection,
+):
+    # -----------------------------------------
+    # Reset
+    # -----------------------------------------
+    # if reset_selection:
+    #     return df.copy()
+
+    filtered_df = df.copy()
+
+    # -----------------------------------------
+    # UAV ID filter
+    # -----------------------------------------
+    if uavids_selection:
+        filtered_df = filtered_df[
+            filtered_df["uav_id"].isin(uavids_selection)
+        ]
+
+    # -----------------------------------------
+    # Status filter
+    # -----------------------------------------
+    if status_selection:
+        filtered_df = filtered_df[
+            filtered_df["status"].isin(status_selection)
+        ]
+
+    # -----------------------------------------
+    # Inspection Date filter
+    # -----------------------------------------
+    if (
+        date_selection
+        and isinstance(date_selection, (tuple, list))
+        and len(date_selection) == 2
+    ):
+        date_start, date_end = date_selection
+
+        inspection_dates = pd.to_datetime(
+            filtered_df["inspection_datetime"]
+        ).dt.date
+
+        filtered_df = filtered_df[
+            (inspection_dates >= date_start)
+            & (inspection_dates <= date_end)
+        ]
+
+    # -----------------------------------------
+    # Sorting
+    # -----------------------------------------
+    SORT_COLUMNS = {
+        "Inspection Date Time": "inspection_datetime",
+        "Filename": "filename",
         "UAV ID": "uav_id",
         "Status": "status",
     }

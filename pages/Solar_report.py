@@ -6,7 +6,9 @@ from ui.ui_tools import (
     display_table,
     render_filter,
     filter_reports,
-    render_solar_filter
+    render_solar_filter,
+    filter_solar_reports,
+    display_solar_table
 )
 
 
@@ -53,7 +55,27 @@ else:
     uavids_selection,
     status_selection,
     date_selection,
-    clearance_selection,
     sorting_selection,
     order_selection,
 ) = render_solar_filter(uav_ids)
+
+
+# --------------------------------------------------
+# Filter reports
+# --------------------------------------------------
+
+filtered_df = filter_solar_reports(
+    df,
+    uavids_selection,
+    status_selection,
+    date_selection,
+    sorting_selection,
+    order_selection,
+)
+
+
+# --------------------------------------------------
+# Display filtered reports
+# --------------------------------------------------
+
+display_solar_table(filtered_df)

@@ -55,6 +55,38 @@ def get_reports_status_by_ids(report_ids):
 
     return reports
 
+def get_solar_reports_status_by_ids(report_ids):
+
+    if not report_ids:
+        return []
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    placeholders = ", ".join(
+        ["%s"] * len(report_ids)
+    )
+
+    query = f"""
+        SELECT
+            id,
+            status
+        FROM row_database.solar_reports
+        WHERE id IN ({placeholders})
+    """
+
+    cursor.execute(
+        query,
+        tuple(report_ids),
+    )
+
+    reports = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return reports
+
 
 def get_report_by_id(report_id):
 
@@ -75,6 +107,37 @@ def get_report_by_id(report_id):
             rf.debug_path
         FROM row_database.reports AS r
         LEFT JOIN row_database.report_files AS rf
+            ON r.id = rf.report_id
+        WHERE r.id = %s
+        """,
+        (report_id,),
+    )
+
+    report = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return report
+
+def get_solar_report_by_id(report_id):
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT
+            r.id,
+            r.filename,
+            r.uav_id,
+            r.inspection_datetime,
+            r.status,
+            rf.report_path,
+            rf.video_path,
+            rf.debug_path
+        FROM row_database.solar_reports AS r
+        LEFT JOIN row_database.solar_report_files AS rf
             ON r.id = rf.report_id
         WHERE r.id = %s
         """,
@@ -136,6 +199,29 @@ def get_all_filename(report_id):
 
     return None
 
+def get_all_solar_filename(report_id):
+
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute(
+        """
+        SELECT filename
+        FROM row_database.solar_reports
+        WHERE id = %s
+        """,
+        (report_id,),
+    )
+
+    result = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    if result:
+        return result["filename"]
+
+    return None
 
 def delete_from_database(report_id):
 
@@ -155,6 +241,33 @@ def delete_from_database(report_id):
     cursor.execute(
             """
             DELETE FROM row_database.reports
+            WHERE id = %s
+            """,
+            (report_id,),
+        )
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+def delete_from_solar_database(report_id):
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        DELETE FROM row_database.solar_report_files
+        WHERE report_id = %s
+        """,
+        (report_id,),
+    )
+
+    conn.commit()
+
+    cursor.execute(
+            """
+            DELETE FROM row_database.solar_reports
             WHERE id = %s
             """,
             (report_id,),
@@ -201,6 +314,41 @@ def create_report(
 
     return report_id
 
+
+
+def create_solar_report(
+    filename,
+    uav_id,
+    inspection_datetime,
+    status,
+):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO row_database.solar_reports (
+            filename,
+            uav_id,
+            inspection_datetime,
+            status
+        )
+        VALUES (%s, %s, %s, %s, %s)
+    """, (
+        filename,
+        uav_id,
+        inspection_datetime,
+        status,
+    ))
+
+    conn.commit()
+
+    report_id = cursor.lastrowid
+
+    cursor.close()
+    conn.close()
+
+    return report_id
+
 def has_processing_report():
     conn = get_connection()
     cursor = conn.cursor()
@@ -220,6 +368,25 @@ def has_processing_report():
 
     return bool(result)
 
+def has_processing_solar_report():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM row_database.solar_reports
+            WHERE status = 'Processing'
+        )
+    """)
+
+    result = cursor.fetchone()[0]
+
+    cursor.close()
+    conn.close()
+
+    return bool(result)
+
 def has_duplicate_report(filename):
     conn = get_connection()
     cursor = conn.cursor()
@@ -228,6 +395,25 @@ def has_duplicate_report(filename):
         SELECT EXISTS (
             SELECT 1
             FROM row_database.reports
+            WHERE filename = %s
+        )
+    """, (filename,))
+
+    result = cursor.fetchone()[0]
+
+    cursor.close()
+    conn.close()
+
+    return bool(result)
+
+def has_duplicate_solar_report(filename):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT EXISTS (
+            SELECT 1
+            FROM row_database.solar_reports
             WHERE filename = %s
         )
     """, (filename,))
